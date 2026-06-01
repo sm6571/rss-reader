@@ -45,6 +45,11 @@ const DEFAULT_FEEDS = [
   { url: 'https://www.reddit.com/r/stocks/.rss', category: 'Trading' },
   { url: 'https://hnrss.org/frontpage', category: 'Tech' },
   { url: 'https://www.reddit.com/r/technology/.rss', category: 'Tech' },
+  { url: 'https://feeds.megaphone.fm/WSJ3526890725', category: 'Podcasts' },  // The Journal (WSJ)
+  { url: 'https://feeds.simplecast.com/JGE3yC0V', category: 'Podcasts' },     // All-In Podcast
+  { url: 'https://feeds.megaphone.fm/marketsnacks', category: 'Podcasts' },    // Snacks Daily / Morning Brew
+  { url: 'https://lexfridman.com/feed/podcast/', category: 'Podcasts' },       // Lex Fridman
+  { url: 'https://audioboom.com/channels/5097784.rss', category: 'Podcasts' }, // Motley Fool Money
 ];
 
 function seedDefaultFeeds(userId) {
