@@ -39,6 +39,27 @@ function userCount() {
   return getDb().prepare('SELECT COUNT(*) as count FROM users').get().count;
 }
 
+const DEFAULT_FEEDS = [
+  { url: 'https://www.reddit.com/r/wallstreetbets/.rss', category: 'Trading' },
+  { url: 'https://www.reddit.com/r/options/.rss', category: 'Trading' },
+  { url: 'https://www.reddit.com/r/stocks/.rss', category: 'Trading' },
+  { url: 'https://hnrss.org/frontpage', category: 'Tech' },
+  { url: 'https://www.reddit.com/r/technology/.rss', category: 'Tech' },
+];
+
+function seedDefaultFeeds(userId) {
+  const db = getDb();
+  const insert = db.prepare('INSERT OR IGNORE INTO feeds (user_id, url, category) VALUES (?, ?, ?)');
+  const addAll = db.transaction(() => {
+    for (const f of DEFAULT_FEEDS) {
+      insert.run(userId, f.url, f.category);
+    }
+  });
+  addAll();
+  // Fetch articles in background
+  fetchAllFeeds().then(n => console.log(`Seeded feeds: fetched ${n} articles for new user`));
+}
+
 // ── Auth routes ──
 app.get('/login', (req, res) => {
   if (req.session && req.session.userId) return res.redirect('/');
@@ -55,6 +76,10 @@ app.post('/auth/register', authLimiter, (req, res) => {
   const result = db.prepare('INSERT INTO users (username, password) VALUES (?, ?)').run(username.trim(), hash);
   req.session.userId = result.lastInsertRowid;
   req.session.username = username.trim();
+
+  // Seed default feeds for new users
+  seedDefaultFeeds(result.lastInsertRowid);
+
   res.json({ status: 'ok' });
 });
 
