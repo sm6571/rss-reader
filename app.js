@@ -40,16 +40,18 @@ function userCount() {
 }
 
 const DEFAULT_FEEDS = [
-  { url: 'https://www.reddit.com/r/wallstreetbets/.rss', category: 'Trading' },
-  { url: 'https://www.reddit.com/r/options/.rss', category: 'Trading' },
-  { url: 'https://www.reddit.com/r/stocks/.rss', category: 'Trading' },
+  // Trading & Finance
+  { url: 'https://seekingalpha.com/market_currents.xml', category: 'Trading' },
+  { url: 'https://www.cnbc.com/id/100003114/device/rss/rss.html', category: 'Trading' },
+  { url: 'https://feeds.bloomberg.com/markets/news.rss', category: 'Trading' },
+  { url: 'https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=15839069', category: 'Trading' },
+  // Tech
   { url: 'https://hnrss.org/frontpage', category: 'Tech' },
-  { url: 'https://www.reddit.com/r/technology/.rss', category: 'Tech' },
-  { url: 'https://feeds.megaphone.fm/WSJ3526890725', category: 'Podcasts' },  // The Journal (WSJ)
+  { url: 'https://techcrunch.com/feed/', category: 'Tech' },
+  { url: 'https://www.theverge.com/rss/index.xml', category: 'Tech' },
+  // Podcasts
   { url: 'https://feeds.simplecast.com/JGE3yC0V', category: 'Podcasts' },     // All-In Podcast
-  { url: 'https://feeds.megaphone.fm/marketsnacks', category: 'Podcasts' },    // Snacks Daily / Morning Brew
   { url: 'https://lexfridman.com/feed/podcast/', category: 'Podcasts' },       // Lex Fridman
-  { url: 'https://audioboom.com/channels/5097784.rss', category: 'Podcasts' }, // Motley Fool Money
 ];
 
 function seedDefaultFeeds(userId) {
