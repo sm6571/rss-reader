@@ -8,6 +8,7 @@ const rateLimit = require('express-rate-limit');
 const { getDb, initDatabase } = require('./database');
 const { fetchFeed, fetchAllFeeds, startScheduler } = require('./feed-fetcher');
 const { parseOPML, generateOPML } = require('./opml');
+const { extractArticle } = require('./article-extractor');
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
@@ -280,7 +281,7 @@ app.get('/api/articles', (req, res) => {
   res.json({ articles, total, page: parseInt(page) || 1, limit: lim });
 });
 
-app.get('/api/articles/:id', (req, res) => {
+app.get('/api/articles/:id', async (req, res) => {
   const db = getDb();
   const uid = req.session.userId;
   const article = db.prepare(`
@@ -293,6 +294,18 @@ app.get('/api/articles/:id', (req, res) => {
   if (!article.is_read) {
     db.prepare('UPDATE articles SET is_read = 1 WHERE id = ?').run(article.id);
     article.is_read = 1;
+  }
+  // Extract full content if not already cached
+  if (article.url && (!article.content || article.content.length < 200)) {
+    try {
+      const extracted = await extractArticle(article.url);
+      if (extracted && extracted.content) {
+        db.prepare('UPDATE articles SET content = ? WHERE id = ?').run(extracted.content, article.id);
+        article.content = extracted.content;
+      }
+    } catch (err) {
+      console.error(`Extract failed for ${article.url}:`, err.message);
+    }
   }
   res.json(article);
 });
