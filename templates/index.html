@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+  <script>
+    (function() {
+      var t = localStorage.getItem('rss-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', t);
+      document.documentElement.setAttribute('data-bs-theme', t);
+    })();
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RSS Reader</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <h1>📰 RSS Reader</h1>
+        <div class="header-actions">
+          <button class="btn-icon" onclick="openAddFeedModal()" title="Add Feed">+</button>
+          <button class="btn-icon" onclick="toggleSidebar()" title="Close sidebar" id="sidebarCloseBtn" style="display:none;">✕</button>
+        </div>
+      </div>
+
+      <div class="sidebar-nav" id="sidebarNav">
+        <div class="nav-item active" data-filter="all" onclick="setFilter('all')">
+          <span class="nav-icon">📋</span>
+          <span class="nav-label">All Articles</span>
+          <span class="badge" id="totalUnread">0</span>
+        </div>
+        <div class="nav-item" data-filter="starred" onclick="setFilter('starred')">
+          <span class="nav-icon">⭐</span>
+          <span class="nav-label">Starred</span>
+        </div>
+        <div class="nav-divider"></div>
+        <div id="feedList"></div>
+      </div>
+
+      <div class="sidebar-footer">
+        <span id="footerUser"></span>
+        <div class="d-flex gap-1">
+          <button class="btn-icon" onclick="toggleTheme()" title="Toggle theme">🌓</button>
+          <button class="btn-icon" onclick="openSettingsModal()" title="Settings">⚙️</button>
+          <button class="btn-icon" onclick="logout()" title="Logout">🚪</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <div class="toolbar">
+        <button class="btn-icon" onclick="toggleSidebar()" title="Menu" id="menuBtn" style="display:none;">☰</button>
+        <span class="toolbar-title" id="toolbarTitle">All Articles</span>
+        <input type="search" class="search-box" id="searchBox" placeholder="Search articles..." oninput="debounceSearch()">
+        <button class="btn-icon" id="filterUnreadBtn" onclick="toggleUnreadFilter()" title="Show unread only">Unread</button>
+        <button class="btn-icon" onclick="markCurrentRead()" title="Mark all read">✓ Read</button>
+        <button class="btn-icon" onclick="refreshFeeds()" title="Refresh feeds" id="refreshBtn">🔄</button>
+      </div>
+
+      <div style="display:flex; flex:1; overflow:hidden;">
+        <!-- Article List -->
+        <div class="article-list" id="articleList">
+          <div class="empty-state" id="emptyState">
+            <div class="empty-icon">📰</div>
+            <h3>No articles yet</h3>
+            <p>Add your first feed to get started</p>
+          </div>
+        </div>
+
+        <!-- Reading Pane -->
+        <div class="reading-pane" id="readingPane">
+          <div class="reading-header">
+            <button class="btn-icon" onclick="closeReadingPane()">←</button>
+            <span style="flex:1"></span>
+            <button class="btn-icon" id="rpStarBtn" onclick="toggleStarCurrent()">☆</button>
+            <button class="btn-icon" id="rpReadBtn" onclick="toggleReadCurrent()">Mark unread</button>
+            <a class="btn-icon" id="rpOpenBtn" href="#" target="_blank" title="Open original">↗</a>
+          </div>
+          <div class="reading-body" id="readingBody"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Add Feed Modal -->
+  <div class="modal fade" id="addFeedModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header border-0">
+          <h5 class="modal-title">Add Feed</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="addFeedAlert" class="alert alert-danger" style="display:none;"></div>
+          <div class="mb-3">
+            <label class="form-label">Feed URL</label>
+            <input type="url" class="form-control" id="feedUrl" placeholder="https://example.com/rss">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Category</label>
+            <input type="text" class="form-control" id="feedCategory" placeholder="Uncategorized" list="categoryList">
+            <datalist id="categoryList"></datalist>
+          </div>
+        </div>
+        <div class="modal-footer border-0">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-accent" onclick="addFeed()" id="addFeedBtn">Add Feed</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="modal fade" id="settingsModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header border-0">
+          <h5 class="modal-title">Settings</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <h6 class="text-muted mb-3">Manage Feeds</h6>
+          <div id="manageFeedsList" class="mb-3" style="max-height:300px; overflow-y:auto;"></div>
+          <div class="nav-divider mb-3"></div>
+          <h6 class="text-muted mb-3">Import / Export</h6>
+          <div class="d-flex gap-2 mb-3">
+            <label class="btn btn-outline-secondary btn-sm" for="opmlFile">📁 Import OPML</label>
+            <input type="file" id="opmlFile" accept=".opml,.xml" style="display:none;" onchange="importOPML()">
+            <a class="btn btn-outline-secondary btn-sm" href="/api/feeds/export" target="_blank">📤 Export OPML</a>
+          </div>
+          <div id="importResult" class="alert alert-success" style="display:none;"></div>
+          <div class="nav-divider mb-3"></div>
+          <h6 class="text-muted mb-3">Keyboard Shortcuts</h6>
+          <div class="small text-muted">
+            <span class="kbd">j</span> / <span class="kbd">k</span> — Next / Previous article<br>
+            <span class="kbd">s</span> — Star / unstar<br>
+            <span class="kbd">r</span> — Toggle read / unread<br>
+            <span class="kbd">o</span> — Open original link<br>
+            <span class="kbd">Esc</span> — Close reading pane
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>

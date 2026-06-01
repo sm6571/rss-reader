@@ -1,0 +1,16 @@
+services:
+  rss-reader:
+    build: .
+    container_name: rss-reader
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    volumes:
+      - rss-data:/app/data
+    environment:
+      - NODE_ENV=local
+      - SESSION_SECRET=change-me-to-a-random-string
+      - DB_PATH=/app/data/rss_reader.db
+
+volumes:
+  rss-data:
